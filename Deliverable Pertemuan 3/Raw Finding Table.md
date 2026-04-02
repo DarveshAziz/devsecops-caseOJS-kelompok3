@@ -202,18 +202,18 @@ Tanpa SameSite attribute, cookie akan dikirim dalam cross-site requests, memungk
 
 ## Temuan #9
 
-| Field                      | Nilai                                                                     |
-| -------------------------- | ------------------------------------------------------------------------- |
+| Field                      | Nilai                                                                    |
+| -------------------------- | ------------------------------------------------------------------------ |
 | **Nama Kerentanan**        | Assert Eval Function with Dynamic Parameter (Remote Code Execution Risk) |
-| **Tool Penemu**            | SAST                                                                      |
-| **Tool Spesifik**          | phpcs-security-audit                                                      |
-| **URL / File**             | /lib/pkp/pages/submission/PKPSubmissionHandler.inc.php                    |
-| **Parameter / Baris Kode** | Line 60                                                                   |
-| **Method**                 | N/A                                                                       |
-| **Payload**                | N/A                                                                       |
+| **Tool Penemu**            | SAST                                                                     |
+| **Tool Spesifik**          | phpcs-security-audit                                                     |
+| **URL / File**             | /lib/pkp/pages/submission/PKPSubmissionHandler.inc.php                   |
+| **Parameter / Baris Kode** | Line 60                                                                  |
+| **Method**                 | N/A                                                                      |
+| **Payload**                | N/A                                                                      |
 | **Response / Bukti**       | WARNING: Assert eval function assert() detected with dynamic parameter   |
-| **OWASP Category**         | A03:2021 - Injection                                                      |
-| **Severity (Raw)**         | Critical                                                                  |
+| **OWASP Category**         | A03:2021 - Injection                                                     |
+| **Severity (Raw)**         | Critical                                                                 |
 
 ### Screenshot / Bukti
 
@@ -221,9 +221,10 @@ Multiple instances found (25+ files): SubmissionHandler.inc.php:56, PKPReviewerH
 
 ### Catatan
 
-Fungsi `assert()` dengan parameter dynamic merupakan remote code execution vulnerability. Attacker dapat menginjeksi code arbitrary melalui parameter yang tidak tersanitasi. Function `assert()` seharusnya hanya digunakan untuk debugging dan harus disable di production (`assert.active = 0`). 
+Fungsi `assert()` dengan parameter dynamic merupakan remote code execution vulnerability. Attacker dapat menginjeksi code arbitrary melalui parameter yang tidak tersanitasi. Function `assert()` seharusnya hanya digunakan untuk debugging dan harus disable di production (`assert.active = 0`).
 
 **Remediation:**
+
 - Disable assert() di production environment
 - Ganti assert() dengan proper exception handling dan validation
 - Tidak menggunakan user input langsung sebagai parameter assert()
@@ -233,18 +234,18 @@ Fungsi `assert()` dengan parameter dynamic merupakan remote code execution vulne
 
 ## Temuan #10
 
-| Field                      | Nilai                                                                |
-| -------------------------- | -------------------------------------------------------------------- |
+| Field                      | Nilai                                                                    |
+| -------------------------- | ------------------------------------------------------------------------ |
 | **Nama Kerentanan**        | Filesystem Function basename() dengan Dynamic Parameter (Path Traversal) |
-| **Tool Penemu**            | SAST                                                                 |
-| **Tool Spesifik**          | phpcs-security-audit                                                 |
-| **URL / File**             | /lib/pkp/pages/admin/AdminHandler.inc.php                            |
-| **Parameter / Baris Kode** | Line 424                                                             |
-| **Method**                 | N/A                                                                  |
-| **Payload**                | N/A                                                                  |
-| **Response / Bukti**       | WARNING: Filesystem function basename() detected with dynamic parameter |
-| **OWASP Category**         | A01:2021 - Broken Access Control / A03:2021 - Injection              |
-| **Severity (Raw)**         | High                                                                 |
+| **Tool Penemu**            | SAST                                                                     |
+| **Tool Spesifik**          | phpcs-security-audit                                                     |
+| **URL / File**             | /lib/pkp/pages/admin/AdminHandler.inc.php                                |
+| **Parameter / Baris Kode** | Line 424                                                                 |
+| **Method**                 | N/A                                                                      |
+| **Payload**                | N/A                                                                      |
+| **Response / Bukti**       | WARNING: Filesystem function basename() detected with dynamic parameter  |
+| **OWASP Category**         | A01:2021 - Broken Access Control / A03:2021 - Injection                  |
+| **Severity (Raw)**         | High                                                                     |
 
 ### Screenshot / Bukti
 
@@ -252,14 +253,16 @@ Fungsi `assert()` dengan parameter dynamic merupakan remote code execution vulne
 
 ### Catatan
 
-Fungsi `basename()` dengan parameter yang berasal dari user input dapat digunakan untuk path traversal attack. Attacker dapat menggunakan sequence seperti `../` untuk access files di direktori parent yang sensitif. 
+Fungsi `basename()` dengan parameter yang berasal dari user input dapat digunakan untuk path traversal attack. Attacker dapat menggunakan sequence seperti `../` untuk access files di direktori parent yang sensitif.
 
 **Vulnerability Scenario:**
+
 - Input user: `../../etc/passwd`
-- basename($_GET['file'])` bisa menghasilkan file traversal jika logic tidak proper
+- basename($\_GET['file'])` bisa menghasilkan file traversal jika logic tidak proper
 - Dapat mengakses file konfigurasi, database credentials, atau source code
 
 **Remediation:**
+
 - Validate dan sanitize semua file path input dari user
 - Gunakan whitelist approach untuk diizinkan file names
 - Implementasi path traversal checks: `realpath()` vs `__DIR__`
@@ -269,18 +272,18 @@ Fungsi `basename()` dengan parameter yang berasal dari user input dapat digunaka
 
 ## Temuan #11
 
-| Field                      | Nilai                                                              |
-| -------------------------- | ------------------------------------------------------------------ |
+| Field                      | Nilai                                                                             |
+| -------------------------- | --------------------------------------------------------------------------------- |
 | **Nama Kerentanan**        | Filesystem Function readfile() dengan Dynamic Parameter (File Read Vulnerability) |
-| **Tool Penemu**            | SAST                                                               |
-| **Tool Spesifik**          | phpcs-security-audit                                               |
-| **URL / File**             | /lib/pkp/controllers/page/PageHandler.inc.php                      |
-| **Parameter / Baris Kode** | Line 155                                                           |
-| **Method**                 | N/A                                                                |
-| **Payload**                | N/A                                                                |
-| **Response / Bukti**       | WARNING: Filesystem function readfile() detected with dynamic parameter |
-| **OWASP Category**         | A01:2021 - Broken Access Control / A05:2021 - Security Misconfiguration |
-| **Severity (Raw)**         | High                                                               |
+| **Tool Penemu**            | SAST                                                                              |
+| **Tool Spesifik**          | phpcs-security-audit                                                              |
+| **URL / File**             | /lib/pkp/controllers/page/PageHandler.inc.php                                     |
+| **Parameter / Baris Kode** | Line 155                                                                          |
+| **Method**                 | N/A                                                                               |
+| **Payload**                | N/A                                                                               |
+| **Response / Bukti**       | WARNING: Filesystem function readfile() detected with dynamic parameter           |
+| **OWASP Category**         | A01:2021 - Broken Access Control / A05:2021 - Security Misconfiguration           |
+| **Severity (Raw)**         | High                                                                              |
 
 ### Screenshot / Bukti
 
@@ -291,12 +294,14 @@ Fungsi `basename()` dengan parameter yang berasal dari user input dapat digunaka
 Fungsi `readfile()` dengan parameter dynamic memungkinkan arbitrary file read vulnerability. Attacker dapat membaca file sensitif seperti konfigurasi database, private keys, source code, atau logs yang berisi informasi berharga.
 
 **Vulnerability Scenario:**
+
 - Input user: `../../config.inc.php` atau `../../../.env`
-- readfile($_GET['page'])` dapat membaca arbitrary file  
+- readfile($\_GET['page'])` dapat membaca arbitrary file
 - Information disclosure: database credentials, API keys, paths
 
 **Remediation:**
-- Validate all file paths terhadap whitelist  
+
+- Validate all file paths terhadap whitelist
 - Implement strict input validation dan sanitization
 - Gunakan `is_file()` dan `strpos()` untuk path validation
 - Jangan pernah allow `.` atau `..` dalam file path
@@ -306,18 +311,18 @@ Fungsi `readfile()` dengan parameter dynamic memungkinkan arbitrary file read vu
 
 ## Temuan #12
 
-| Field                      | Nilai                                                                |
-| -------------------------- | -------------------------------------------------------------------- |
+| Field                      | Nilai                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------- |
 | **Nama Kerentanan**        | Filesystem Function delete() dengan Dynamic Parameter (Arbitrary File Deletion) |
-| **Tool Penemu**            | SAST                                                                 |
-| **Tool Spesifik**          | phpcs-security-audit                                                 |
-| **URL / File**             | /lib/pkp/controllers/api/file/PKPManageFileApiHandler.inc.php       |
-| **Parameter / Baris Kode** | Line 59                                                              |
-| **Method**                 | N/A                                                                  |
-| **Payload**                | N/A                                                                  |
-| **Response / Bukti**       | WARNING: Filesystem function delete() detected with dynamic parameter |
-| **OWASP Category**         | A01:2021 - Broken Access Control                                    |
-| **Severity (Raw)**         | Critical                                                             |
+| **Tool Penemu**            | SAST                                                                            |
+| **Tool Spesifik**          | phpcs-security-audit                                                            |
+| **URL / File**             | /lib/pkp/controllers/api/file/PKPManageFileApiHandler.inc.php                   |
+| **Parameter / Baris Kode** | Line 59                                                                         |
+| **Method**                 | N/A                                                                             |
+| **Payload**                | N/A                                                                             |
+| **Response / Bukti**       | WARNING: Filesystem function delete() detected with dynamic parameter           |
+| **OWASP Category**         | A01:2021 - Broken Access Control                                                |
+| **Severity (Raw)**         | Critical                                                                        |
 
 ### Screenshot / Bukti
 
@@ -328,11 +333,13 @@ Fungsi `readfile()` dengan parameter dynamic memungkinkan arbitrary file read vu
 Fungsi `delete()` atau `unlink()` dengan parameter dynamic adalah arbitrary file deletion vulnerability. Attacker dapat menghapus file aplikasi kritis, logs, backup, atau sistem files yang menyebabkan Denial of Service atau data loss.
 
 **Vulnerability Scenario:**
+
 - Input user: `../../config.inc.php` atau system critical files
 - delete($user_supplied_path)` dapat menghapus arbitrary files
 - Impact: Denial of Service, Data Loss, System Compromise
 
 **Remediation:**
+
 - Implement strict whitelist untuk allowed files/paths
 - Validate input terhadap hardcoded list of deletable files
 - Gunakan file signatures atau checksums untuk verify file identity
@@ -344,18 +351,18 @@ Fungsi `delete()` atau `unlink()` dengan parameter dynamic adalah arbitrary file
 
 ## Temuan #13
 
-| Field                      | Nilai                                                              |
-| -------------------------- | ------------------------------------------------------------------ |
+| Field                      | Nilai                                                                     |
+| -------------------------- | ------------------------------------------------------------------------- |
 | **Nama Kerentanan**        | Filesystem Function fclose() dengan Dynamic Parameter (File Handle Abuse) |
-| **Tool Penemu**            | SAST                                                               |
-| **Tool Spesifik**          | phpcs-security-audit                                               |
-| **URL / File**             | /lib/pkp/pages/stats/PKPStatsHandler.inc.php                       |
-| **Parameter / Baris Kode** | Line 635                                                           |
-| **Method**                 | N/A                                                                |
-| **Payload**                | N/A                                                                |
-| **Response / Bukti**       | WARNING: Filesystem function fclose() detected with dynamic parameter |
-| **OWASP Category**         | A05:2021 - Security Misconfiguration                               |
-| **Severity (Raw)**         | High                                                               |
+| **Tool Penemu**            | SAST                                                                      |
+| **Tool Spesifik**          | phpcs-security-audit                                                      |
+| **URL / File**             | /lib/pkp/pages/stats/PKPStatsHandler.inc.php                              |
+| **Parameter / Baris Kode** | Line 635                                                                  |
+| **Method**                 | N/A                                                                       |
+| **Payload**                | N/A                                                                       |
+| **Response / Bukti**       | WARNING: Filesystem function fclose() detected with dynamic parameter     |
+| **OWASP Category**         | A05:2021 - Security Misconfiguration                                      |
+| **Severity (Raw)**         | High                                                                      |
 
 ### Screenshot / Bukti
 
@@ -366,12 +373,14 @@ Fungsi `delete()` atau `unlink()` dengan parameter dynamic adalah arbitrary file
 Penggunaan `fclose()` dengan dynamic parameter dapat menyebabkan file handle confusion attack. Jika parameter bukan resource handle yang valid, dapat menghasilkan unexpected behavior, file descriptor leaks, atau segmentation faults.
 
 **Risks:**
-- File descriptor exhaustion (DoS)  
+
+- File descriptor exhaustion (DoS)
 - Unintended file closure menyebabkan data loss
 - File handle confusion attacks
 - Application crashes atau memory corruption
 
 **Remediation:**
+
 - Implement proper file handle management dengan try-finally blocks
 - Validate bahwa parameter adalah valid file resource
 - Use proper exception handling untuk file operations
@@ -382,18 +391,18 @@ Penggunaan `fclose()` dengan dynamic parameter dapat menyebabkan file handle con
 
 ## Temuan #14
 
-| Field                      | Nilai                                                        |
-| -------------------------- | ------------------------------------------------------------ |
-| **Nama Kerentanan**        | Callback Injection via array_map() Function                 |
-| **Tool Penemu**            | SAST                                                         |
-| **Tool Spesifik**          | phpcs-security-audit                                         |
-| **URL / File**             | /pages/issue/IssueHandler.inc.php                            |
-| **Parameter / Baris Kode** | Line 303                                                     |
-| **Method**                 | N/A                                                          |
-| **Payload**                | N/A                                                          |
+| Field                      | Nilai                                                         |
+| -------------------------- | ------------------------------------------------------------- |
+| **Nama Kerentanan**        | Callback Injection via array_map() Function                   |
+| **Tool Penemu**            | SAST                                                          |
+| **Tool Spesifik**          | phpcs-security-audit                                          |
+| **URL / File**             | /pages/issue/IssueHandler.inc.php                             |
+| **Parameter / Baris Kode** | Line 303                                                      |
+| **Method**                 | N/A                                                           |
+| **Payload**                | N/A                                                           |
 | **Response / Bukti**       | WARNING: Function array_map() that supports callback detected |
-| **OWASP Category**         | A03:2021 - Injection                                         |
-| **Severity (Raw)**         | Medium                                                       |
+| **OWASP Category**         | A03:2021 - Injection                                          |
+| **Severity (Raw)**         | Medium                                                        |
 
 ### Screenshot / Bukti
 
@@ -404,12 +413,14 @@ Multiple instances (6 files): IssueHandler.inc.php:303, SearchHandler.inc.php:21
 Penggunaan `array_map()` dengan callback function dapat mengakibatkan callback injection jika callback name berasal dari user input atau tidak ter-sanitasi. Attacker dapat menginject arbitrary callback function untuk eksekusi code yang tidak diinginkan.
 
 **Vulnerability:**
+
 ```php
 $callback = $_GET['func']; // User input
 array_map($callback, $array);  // Arbitrary callback execution
 ```
 
 **Remediation:**
+
 - Tidak pernah accept callback names dari user input
 - Implementasi whitelist untuk allowed callback functions
 - Gunakan anonymous functions atau closures sebagai callback
@@ -420,18 +431,18 @@ array_map($callback, $array);  // Arbitrary callback execution
 
 ## Temuan #15
 
-| Field                      | Nilai                                                       |
-| -------------------------- | ----------------------------------------------------------- |
-| **Nama Kerentanan**        | Callback Injection via array_udiff() Function              |
-| **Tool Penemu**            | SAST                                                        |
-| **Tool Spesifik**          | phpcs-security-audit                                        |
+| Field                      | Nilai                                                                     |
+| -------------------------- | ------------------------------------------------------------------------- |
+| **Nama Kerentanan**        | Callback Injection via array_udiff() Function                             |
+| **Tool Penemu**            | SAST                                                                      |
+| **Tool Spesifik**          | phpcs-security-audit                                                      |
 | **URL / File**             | /lib/pkp/controllers/grid/navigationMenus/form/NavigationMenuForm.inc.php |
-| **Parameter / Baris Kode** | Line 87                                                     |
-| **Method**                 | N/A                                                         |
-| **Payload**                | N/A                                                         |
-| **Response / Bukti**       | WARNING: Function array_udiff() that supports callback detected |
-| **OWASP Category**         | A03:2021 - Injection                                        |
-| **Severity (Raw)**         | Medium                                                      |
+| **Parameter / Baris Kode** | Line 87                                                                   |
+| **Method**                 | N/A                                                                       |
+| **Payload**                | N/A                                                                       |
+| **Response / Bukti**       | WARNING: Function array_udiff() that supports callback detected           |
+| **OWASP Category**         | A03:2021 - Injection                                                      |
+| **Severity (Raw)**         | Medium                                                                    |
 
 ### Screenshot / Bukti
 
@@ -442,6 +453,7 @@ array_map($callback, $array);  // Arbitrary callback execution
 Fungsi `array_udiff()` dengan user-supplied callback dapat menghasilkan code execution vulnerability yang sama dengan array_map(). Jika callback function name diambil dari input yang tidak ter-sanitasi, attacker dapat menginject arbitrary functions.
 
 **Remediation:**
+
 - Implementasi strict input validation untuk callback names
 - Gunakan predefined callback functions atau closures
 - Tidak pernah pass user input sebagai callback
@@ -450,48 +462,221 @@ Fungsi `array_udiff()` dengan user-supplied callback dapat menghasilkan code exe
 
 ---
 
-## Summary Findings
+## Temuan #16
 
-**Total Temuan Teridentifikasi: 15 (8 DAST + 7 SAST)**
+| Field                      | Nilai                                                                                           |
+| -------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Nama Kerentanan**        | OpenSSH 9.6p1 Multiple Remote Code Execution Vulnerabilities (RegreSSHion)                      |
+| **Tool Penemu**            | DAST                                                                                            |
+| **Tool Spesifik**          | Nmap 7.98 dengan script vuln                                                                    |
+| **URL / File**             | 10.34.100.180:22                                                                                |
+| **Parameter / Baris Kode** | N/A                                                                                             |
+| **Method**                 | N/A                                                                                             |
+| **Payload**                | N/A                                                                                             |
+| **Response / Bukti**       | OpenSSH 9.6p1 Ubuntu with CVE-2024-6387 (score 8.1), CVE-2025-26465 (6.8), CVE-2025-26466 (5.9) |
+| **OWASP Category**         | A06:2021 - Vulnerable and Outdated Components                                                   |
+| **Severity (Raw)**         | High                                                                                            |
 
-| Tool   | Source       | Medium | High | Critical | Total |
-| ------ | ------------ | ------ | ---- | -------- | ----- |
-| DAST   | OWASP ZAP    | 5      | 0    | 0        | 5     |
-| DAST   | OWASP ZAP    | 0      | 3    | 0        | 3     |
-| SAST   | phpcs-audit  | 2      | 3    | 2        | 7     |
-| **TOTAL** | **Combined**   | **7**  | **6** | **2**    | **15**    |
+### Screenshot / Bukti
 
-**Severity Distribution:**
+Nmap vulnerability scan menemukan multiple CVEs pada OpenSSH 9.6p1: CVE-2024-6387, CVE-2025-26465, CVE-2025-26466, CVE-2025-32728, CVE-2025-61985, CVE-2025-61984.
 
-| Severity   | Count | Kategori OWASP                                  |
-| ---------- | ----- | ----------------------------------------------- |
-| **Critical** | 2    | A03:2021-Injection (assert, delete functions)  |
-| **High**   | 6     | A01:2021-Broken Access Control / A05:2021-Security Misconfiguration |
-| **Medium** | 7     | A05:2021-Security Misconfiguration / A03:2021-Injection |
+### Catatan
 
-**Primary Risk Areas by Tool:**
-
-**DAST Findings (Network/Runtime Security):**
-- **Security Misconfiguration (A05)** - CSP Headers, Directory Browsing, Server Info Leak (4)
-- **Vulnerable Components (A06)** - jQuery UI outdated (1)
-- **Cookie Security (A07/A04)** - HttpOnly Flag, SameSite Attribute (2)
-
-**SAST Findings (Code-Level Security):**
-- **Injection Attacks (A03)** - assert() eval, array callbacks (4)
-- **Access Control (A01)** - Arbitrary file operations, Path traversal (3)
-
-**Combined Risk Assessment:**
-This application presents SIGNIFICANT SECURITY RISKS across multiple attack vectors:
-1. **Code Execution Risk (CRITICAL)** - assert() dan delete() functions dengan dynamic parameters
-2. **Data Breach Risk (HIGH)** - Path traversal and arbitrary file read via filesystem functions  
-3. **Information Disclosure (HIGH)** - Directory browsing, server headers, error messages
-4. **Dependency Vulnerabilities (MEDIUM)** - Outdated libraries like jQuery UI
-
-**Recommended Action Plan (Prioritized):**
-1. **Immediate (P0):** Remove assert() usage, implement whitelist untuk file operations
-2. **High Priority (P1):** Add security headers (CSP, X-Frame-Options), update jQuery UI
-3. **Medium Priority (P2):** Implement input validation framework, disable directory browsing, sanitize error messages
+OpenSSH 9.6p1 memiliki multiple known remote code execution dan denial of service vulnerabilities. CVE-2024-6387 (RegreSSHion) memiliki severity 8.1 dan dapat dieksploitasi. Update ke versi OpenSSH terbaru (9.9+) yang telah mempatch semua vulnerabilities ini.
 
 ---
 
-_Report Generated: OWASP ZAP 2.16.1 (DAST) + phpcs-security-audit (SAST) | Target: Open Journal Systems (OJS) | Scan Date: 2026-04-02 | Combined Analysis_
+## Temuan #17
+
+| Field                      | Nilai                                                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Nama Kerentanan**        | Apache 2.4.58 Multiple Remote Code Execution Vulnerabilities                                   |
+| **Tool Penemu**            | DAST                                                                                           |
+| **Tool Spesifik**          | Nmap 7.98 dengan script vuln                                                                   |
+| **URL / File**             | 10.34.100.180:80                                                                               |
+| **Parameter / Baris Kode** | N/A                                                                                            |
+| **Method**                 | N/A                                                                                            |
+| **Payload**                | N/A                                                                                            |
+| **Response / Bukti**       | Apache/2.4.58 (Ubuntu) dengan CVE-2024-38476 (9.8), CVE-2024-38474 (9.8), CVE-2024-38475 (9.1) |
+| **OWASP Category**         | A06:2021 - Vulnerable and Outdated Components                                                  |
+| **Severity (Raw)**         | High                                                                                           |
+
+### Screenshot / Bukti
+
+Nmap scan menemukan multiple CVEs pada Apache 2.4.58: CVE-2024-38476 (CVSS 9.8), CVE-2024-38474 (CVSS 9.8), CVE-2024-38475 (CVSS 9.1), CVE-2025-23048 (9.1), CVE-2025-58098 (8.3), CVE-2024-38473 (8.1).
+
+### Catatan
+
+Apache 2.4.58 pada Ubuntu memiliki multiple critical vulnerabilities dengan CVSS score tinggi yang dapat mengakibatkan remote code execution. Upgrade ke Apache 2.4.66+ yang telah mempatch semua CVE terkait. Versi saat ini (2.4.58) sudah outdated dan tidak menerima security patches.
+
+---
+
+## Temuan #18
+
+| Field                      | Nilai                                              |
+| -------------------------- | -------------------------------------------------- |
+| **Nama Kerentanan**        | Missing Referrer-Policy HTTP Response Header       |
+| **Tool Penemu**            | DAST                                               |
+| **Tool Spesifik**          | Nikto v2.6.0                                       |
+| **URL / File**             | http://10.34.100.180 (all endpoints)               |
+| **Parameter / Baris Kode** | HTTP Response Header: Referrer-Policy              |
+| **Method**                 | GET                                                |
+| **Payload**                | N/A                                                |
+| **Response / Bukti**       | Suggested security header missing: referrer-policy |
+| **OWASP Category**         | A05:2021 - Security Misconfiguration               |
+| **Severity (Raw)**         | Low                                                |
+
+### Screenshot / Bukti
+
+Nikto scan menunjukkan Referrer-Policy header tidak ditemukan dalam response headers.
+
+### Catatan
+
+Referrer-Policy header mengontrol informasi yang dikirim dalam Referer header ketika user meninggalkan aplikasi. Tanpa header ini, sumber referrer bisa bocor ke external sites. Set ke `Referrer-Policy: strict-origin-when-cross-origin` untuk melindungi privacy user.
+
+---
+
+## Temuan #19
+
+| Field                      | Nilai                                                      |
+| -------------------------- | ---------------------------------------------------------- |
+| **Nama Kerentanan**        | Missing X-Content-Type-Options Header (MIME-Type Sniffing) |
+| **Tool Penemu**            | DAST                                                       |
+| **Tool Spesifik**          | Nikto v2.6.0                                               |
+| **URL / File**             | http://10.34.100.180 (all endpoints)                       |
+| **Parameter / Baris Kode** | HTTP Response Header: X-Content-Type-Options               |
+| **Method**                 | GET                                                        |
+| **Payload**                | N/A                                                        |
+| **Response / Bukti**       | Suggested security header missing: x-content-type-options  |
+| **OWASP Category**         | A05:2021 - Security Misconfiguration                       |
+| **Severity (Raw)**         | Medium                                                     |
+
+### Screenshot / Bukti
+
+Nikto scan menunjukkan X-Content-Type-Options header tidak ditemukan. Multiple instances di semua endpoint.
+
+### Catatan
+
+Header X-Content-Type-Options: nosniff mencegah browser melakukan content-type sniffing, yang bisa memungkinkan attacker untuk execute malicious scripts atau bypass content security policies. Browser mungkin menginterpretasi file dengan MIME-type yang salah, leading to XSS attacks. Set header ke `X-Content-Type-Options: nosniff` di semua responses.
+
+---
+
+## Temuan #20
+
+| Field                      | Nilai                                                 |
+| -------------------------- | ----------------------------------------------------- |
+| **Nama Kerentanan**        | Missing Permissions-Policy HTTP Response Header       |
+| **Tool Penemu**            | DAST                                                  |
+| **Tool Spesifik**          | Nikto v2.6.0                                          |
+| **URL / File**             | http://10.34.100.180 (all endpoints)                  |
+| **Parameter / Baris Kode** | HTTP Response Header: Permissions-Policy              |
+| **Method**                 | GET                                                   |
+| **Payload**                | N/A                                                   |
+| **Response / Bukti**       | Suggested security header missing: permissions-policy |
+| **OWASP Category**         | A05:2021 - Security Misconfiguration                  |
+| **Severity (Raw)**         | Low                                                   |
+
+### Screenshot / Bukti
+
+Nikto scan menunjukkan Permissions-Policy header tidak ditemukan pada response headers.
+
+### Catatan
+
+Permissions-Policy header (sebelumnya Feature-Policy) mengontrol browser features dan APIs yang dapat diakses oleh aplikasi dan third-party scripts. Tanpa header ini, malicious scripts atau third-party libraries bisa mengakses hardware features (camera, microphone, location) tanpa permission. Implementasikan `Permissions-Policy: geolocation=self, camera=none, microphone=none` sesuai kebutuhan.
+
+---
+
+## Temuan #21
+
+| Field                      | Nilai                                                             |
+| -------------------------- | ----------------------------------------------------------------- |
+| **Nama Kerentanan**        | Apache 2.4.58 Outdated Version (No Security Patches)              |
+| **Tool Penemu**            | DAST                                                              |
+| **Tool Spesifik**          | Nikto v2.6.0                                                      |
+| **URL / File**             | http://10.34.100.180:80                                           |
+| **Parameter / Baris Kode** | HTTP Server Header                                                |
+| **Method**                 | GET                                                               |
+| **Payload**                | N/A                                                               |
+| **Response / Bukti**       | Apache/2.4.58 appears to be outdated (current is at least 2.4.66) |
+| **OWASP Category**         | A06:2021 - Vulnerable and Outdated Components                     |
+| **Severity (Raw)**         | High                                                              |
+
+### Screenshot / Bukti
+
+Nikto scan report: "Apache/2.4.58 appears to be outdated (current is at least 2.4.66)". Version 2.4.58 tidak menerima security updates.
+
+### Catatan
+
+Apache 2.4.58 adalah versi lama yang tidak menerima security patches. Apache 2.4.66 dan lebih tinggi memiliki ratusan security fixes termasuk fixes untuk multiple RCE vulnerabilities. Update Apache ke versi terbaru (2.4.66+) untuk mendapatkan security patches dan bug fixes.
+
+---
+
+## Temuan #22
+
+| Field                      | Nilai                                                        |
+| -------------------------- | ------------------------------------------------------------ |
+| **Nama Kerentanan**        | Missing HSTS (Strict-Transport-Security) Header              |
+| **Tool Penemu**            | DAST                                                         |
+| **Tool Spesifik**          | Nikto v2.6.0                                                 |
+| **URL / File**             | http://10.34.100.180 (all endpoints)                         |
+| **Parameter / Baris Kode** | HTTP Response Header: strict-transport-security              |
+| **Method**                 | GET                                                          |
+| **Payload**                | N/A                                                          |
+| **Response / Bukti**       | Suggested security header missing: strict-transport-security |
+| **OWASP Category**         | A05:2021 - Security Misconfiguration                         |
+| **Severity (Raw)**         | Medium                                                       |
+
+### Screenshot / Bukti
+
+Nikto scan menunjukkan strict-transport-security header tidak ditemukan.
+
+### Catatan
+
+HSTS header memaksa browser untuk hanya menggunakan HTTPS connection dan mencegah protocol downgrade attacks. Tanpa HSTS, attacker bisa melakukan MITM attack dengan memaksakan koneksi HTTP. Implementasikan `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` untuk memastikan semua komunikasi terenkripsi.
+
+---
+
+## Summary Findings
+
+**Total Temuan Teridentifikasi: 22 (14 DAST + 8 SAST)**
+
+| Tool      | Source       | Medium | High  | Critical | Total  |
+| --------- | ------------ | ------ | ----- | -------- | ------ |
+| DAST      | OWASP ZAP    | 5      | 0     | 0        | 5      |
+| DAST      | Nmap         | 0      | 2     | 0        | 2      |
+| DAST      | Nikto        | 4      | 3     | 0        | 7      |
+| DAST      | Combined     | 9      | 5     | 0        | 14     |
+| SAST      | phpcs-audit  | 2      | 3     | 2        | 7      |
+| **TOTAL** | **Combined** | **11** | **8** | **2**    | **22** |
+
+**Severity Distribution (Updated):**
+
+| Severity     | Count | Kategori OWASP                                            |
+| ------------ | ----- | --------------------------------------------------------- |
+| **Critical** | 2     | A03:2021-Injection (assert, delete functions)             |
+| **High**     | 8     | A06:2021-Vulnerable Components, A05:2021-Misconfiguration |
+| **Medium**   | 11    | A05:2021-Security Misconfiguration / A03:2021-Injection   |
+| **Low**      | 1     | A07:2021-XSS (Cookie missing HttpOnly)                    |
+
+**Primary Risk Areas by Tool (Updated):**
+
+**DAST Findings - Infrastructure/Network Security:**
+
+- **Vulnerable Components (A06)** - OpenSSH, Apache CVEs (2)
+- **Security Misconfiguration (A05)** - Missing Headers, Directory Browsing (9)
+
+**SAST Findings - Application Code Level:**
+
+- **Injection Attacks (A03)** - assert() eval, file operations (4)
+- **Access Control (A01)** - Arbitrary file operations, Path traversal (3)
+
+**Recommended Action Plan (Prioritized):**
+
+1. **Immediate (P0):** Update Apache 2.4.58 → 2.4.66+, Update OpenSSH 9.6p1 → 9.9+, Remove assert() usage
+2. **High Priority (P1):** Add all missing security headers (HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
+3. **Medium Priority (P2):** Implement strict input validation framework, disable directory browsing, sanitize error messages
+
+---
+
+_Report Generated: Nmap 7.98 + Nikto v2.6.0 (DAST) + OWASP ZAP 2.16.1 + phpcs-security-audit (SAST) | Target: Open Journal Systems (OJS) | Scan Date: 2026-04-02 | Final Combined Analysis_

@@ -1,0 +1,5 @@
+GET /index.php/test/search/index?query=halo&dateFromYear=&dateFromMonth=&dateFromDay=&dateToYear=&dateToMonth=&dateToDay=&authors= HTTP/1.1
+Host: 10.34.100.180
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+Cookie: OJSSID=7fk2a9o427dccpmt9dqntsauqo
+Connection: close

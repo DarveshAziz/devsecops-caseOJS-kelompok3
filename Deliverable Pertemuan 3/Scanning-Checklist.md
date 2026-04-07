@@ -13,8 +13,8 @@ Checklist ini digunakan untuk memastikan kelengkapan scanning:
 - [ ] Manual XSS test pada form search, profil, abstrak
 
 ### SAST Checklist
-- [ ] Semgrep dengan ruleset `p/php` selesai dijalankan
-- [ ] Semgrep dengan ruleset `p/owasp-top-ten` selesai dijalankan
-- [ ] Custom rules Semgrep dijalankan
+- [x] Semgrep dengan ruleset `p/php` selesai dijalankan
+- [x] Semgrep dengan ruleset `p/owasp-top-ten` selesai dijalankan
+- [x] Custom rules Semgrep dijalankan
 - [ ] Manual review pada 5 file kritis
 - [ ] Temuan deduplikasi (hapus false positive)

@@ -569,5 +569,3 @@ $this->_cacheability = CACHEABILITY_NO_STORE; // Safe default
 | 4.2 | ✅ AMAN     | `TinyMCEPlugin.inc.php`                | `json_encode()` data          |
 | 5.4 | ✅ AMAN     | `PKPTemplateManager.inc.php`           | `strip_unsafe_html` modifier  |
 | 5.5 | ✅ AMAN     | `PKPTemplateManager.inc.php`           | `CACHEABILITY_NO_STORE`       |
-
-**Total:** 🔴 Kritikal: 2 &nbsp;|&nbsp; 🟠 Tinggi: 5 &nbsp;|&nbsp; 🟡 Menengah: 7 &nbsp;|&nbsp; 🔵 Rendah: 3 &nbsp;|&nbsp; ✅ Aman: 7

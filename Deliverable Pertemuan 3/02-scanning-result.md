@@ -21,8 +21,8 @@ Aplikasi OJS menunjukkan kelemahan signifikan pada dua area utama: (1) **securit
 
 ### Tabel Perbandingan
 
-| Aspek                  | **SAST (Static)**                          | **DAST (Dynamic)**                             |
-| ---------------------- | ------------------------------------------ | ---------------------------------------------- |
+| Aspek                        | **SAST (Static)**                    | **DAST (Dynamic)**                       |
+| ---------------------------- | ------------------------------------------ | ---------------------------------------------- |
 | **Waktu Pengujian**    | Sebelum aplikasi berjalan (pre-deployment) | Saat aplikasi berjalan (runtime)               |
 | **Objek Analisis**     | Source code, bytecode, file statis         | Aplikasi yang live di environment              |
 | **Akses Source Code**  | Diperlukan                                 | Tidak diperlukan                               |
@@ -79,8 +79,8 @@ nikto -h http://10.34.100.180 -o raw_output_nikto.txt -Format txt
 
 **CVEs Terdeteksi:**
 
-| Service           | CVE                            | Severity                    |
-| ----------------- | ------------------------------ | --------------------------- |
+| Service                 | CVE                            | Severity                    |
+| ----------------------- | ------------------------------ | --------------------------- |
 | **OpenSSH 9.6p1** | CVE-2024-6387                  | 8.1 (Authentication Bypass) |
 | **Apache 2.4.58** | CVE-2024-38476, CVE-2024-38474 | 9.8 (DoS, NULL Pointer)     |
 
@@ -134,14 +134,14 @@ phpcs --standard=Security --extensions=php \
 
 **Warning Distribution:**
 
-| Pattern                  | Count | Severity     |
-| ------------------------ | ----- | ------------ |
+| Pattern                  | Count | Severity           |
+| ------------------------ | ----- | ------------------ |
 | assert() dynamic param   | 617   | **Critical** |
-| SQL injection hotspot    | 174   | High         |
-| array_map() callback     | 118   | Medium       |
-| delete() dynamic param   | 37    | Critical     |
-| basename() dynamic param | 28    | High         |
-| readfile() dynamic param | 1     | High         |
+| SQL injection hotspot    | 174   | High               |
+| array_map() callback     | 118   | Medium             |
+| delete() dynamic param   | 37    | Critical           |
+| basename() dynamic param | 28    | High               |
+| readfile() dynamic param | 1     | High               |
 
 **Interpretation:** PHPCS menghasilkan banyak hotspot warnings yang memerlukan manual verification. Tidak semua otomatis vulnerability; banyak yang merupakan false positives karena framework-level protections tidak terdeteksi static analysis.
 
@@ -151,14 +151,14 @@ phpcs --standard=Security --extensions=php \
 
 Berikut adalah 6 temuan paling kritis yang telah dikurasi dari raw output scanning DAST dan SAST.
 
-| #   | Nama Kerentanan                       | Tool         | Severity     | Instances | Impact                                 |
-| --- | ------------------------------------- | ------------ | ------------ | --------- | -------------------------------------- |
-| 1   | **CSP Header Not Set**                | DAST (ZAP)   | Medium       | 573       | XSS, Resource injection, Clickjacking  |
-| 2   | **Directory Browsing Enabled**        | DAST (Nikto) | Medium       | 88 dirs   | Information disclosure, reconnaissance |
-| 3   | **Assert() dengan Dynamic Parameter** | SAST (phpcs) | **Critical** | 617       | Remote Code Execution (RCE)            |
-| 4   | **Vulnerable jQuery UI v1.12.1**      | DAST (ZAP)   | Medium       | 1         | XSS, DoS via known CVEs                |
-| 5   | **Cookie tanpa HttpOnly/SameSite**    | DAST (ZAP)   | Low          | 2         | Session hijacking, CSRF                |
-| 6   | **basename() / readfile() Dynamic**   | SAST (phpcs) | High         | 29        | Path traversal, arbitrary file read    |
+| # | Nama Kerentanan                             | Tool         | Severity           | Instances | Impact                                 |
+| - | ------------------------------------------- | ------------ | ------------------ | --------- | -------------------------------------- |
+| 1 | **CSP Header Not Set**                | DAST (ZAP)   | Medium             | 573       | XSS, Resource injection, Clickjacking  |
+| 2 | **Directory Browsing Enabled**        | DAST (Nikto) | Medium             | 88 dirs   | Information disclosure, reconnaissance |
+| 3 | **Assert() dengan Dynamic Parameter** | SAST (phpcs) | **Critical** | 617       | Remote Code Execution (RCE)            |
+| 4 | **Vulnerable jQuery UI v1.12.1**      | DAST (ZAP)   | Medium             | 1         | XSS, DoS via known CVEs                |
+| 5 | **Cookie tanpa HttpOnly/SameSite**    | DAST (ZAP)   | Low                | 2         | Session hijacking, CSRF                |
+| 6 | **basename() / readfile() Dynamic**   | SAST (phpcs) | High               | 29        | Path traversal, arbitrary file read    |
 
 ### Temuan #1: CSP Header Not Set (XSS Prevention Bypass)
 
@@ -298,18 +298,19 @@ Dari scanning DAST dan SAST terhadap OJS, teridentifikasi **15 temuan kritis** d
 ### Prioritas Perbaikan
 
 1. **Immediate (Week 1):**
+
    - Disable `assert()` di production environment
    - Add security headers (CSP, X-Frame-Options, X-Content-Type-Options)
    - Disable directory indexing di Apache
    - Set HttpOnly, Secure, SameSite flags pada session cookies
-
 2. **Short-term (Week 2-4):**
+
    - Update jQuery UI v1.12.1 ke v1.13.3+
    - Update Apache 2.4.58 ke 2.4.66
    - Audit dan remediate file operation vulnerabilities (basename, readfile, delete)
    - Custom error pages (hide stack traces)
-
 3. **Medium-term (Month 2-3):**
+
    - Implement comprehensive input validation/sanitization
    - Review dan harden authorization logic
    - Implement proper SSRF protections
@@ -330,6 +331,6 @@ Dari scanning DAST dan SAST terhadap OJS, teridentifikasi **15 temuan kritis** d
 ---
 
 **Dokumen ini disiapkan sebagai hasil scanning keamanan formal untuk Pertemuan 3 DevSecOps Course.**
-**Tanggal Pembuatan:** 2 April 2026  
-**Dibuat Oleh:** DevSecOps Team  
+**Tanggal Pembuatan:** 2 April 2026
+**Dibuat Oleh:** DevSecOps Team
 **Status:** FINAL

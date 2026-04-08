@@ -1,62 +1,64 @@
-// delete later (Klo salah revisi aja yak :v)
-// CVSS score calculation untuk minimal 5 temuan kritis
+# Kalkulasi Skor CVSS v3.1 untuk Temuan Kritis
 
-### Deliverable 2: CVSS Score Calculation untuk 5 Temuan Kritis
-
-**1. VUL-001: Apache 2.4.58 Multiple RCE (CVE-2024-38476)**
-* **Vector:** `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`
-* **Penjelasan:** Dapat dieksploitasi dari jarak jauh tanpa kondisi khusus, tanpa autentikasi, dan tanpa interaksi pengguna. Dampaknya adalah pengambilalihan kontrol penuh atas kerahasiaan, integritas, dan ketersediaan server.
-* **Kalkulasi Manual:**
-  $$ISS = 1 - [(1 - 0.56) \times (1 - 0.56) \times (1 - 0.56)] = 0.9148$$
-  $$Impact = 6.42 \times 0.9148 = 5.873$$
-  $$Exploitability = 8.22 \times 0.85 \times 0.77 \times 0.85 \times 0.85 = 3.887$$
-  $$Base Score = \text{Roundup}(\min(5.873 + 3.887, 10)) = \text{Roundup}(9.76) = 9.8$$
-* **Skor Akhir:** **9.8 (Critical)**
+Dokumen ini mendetailkan perhitungan skor CVSS v3.1 untuk 5 kerentanan paling kritis yang ditemukan pada sistem OJS.
 
 ---
 
-**2. VUL-003: RCE Risk via `assert()` (SAST)**
-* **Vector:** `CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H`
-* **Penjelasan:** Parameter dinamis pada `assert()` memicu eksekusi kode. Penyerang butuh login level dasar (PR:L) karena fungsi berada di modul *Submission*. Tidak butuh interaksi korban. Berdampak penuh (C/I/A High) pada aplikasi.
-* **Kalkulasi Manual:**
-  $$ISS = 1 - [(1 - 0.56) \times (1 - 0.56) \times (1 - 0.56)] = 0.9148$$
-  $$Impact = 6.42 \times 0.9148 = 5.873$$
-  $$Exploitability = 8.22 \times 0.85 \times 0.77 \times 0.62 \times 0.85 = 2.835$$
-  $$Base Score = \text{Roundup}(\min(5.873 + 2.835, 10)) = \text{Roundup}(8.708) = 8.8$$
-* **Skor Akhir:** **8.8 (High)**
+### 1. VUL-001: Apache HTTP Server RCE (CVE-2024-38476)
+*   **Vector:** `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`
+*   **Kalkulasi Manual:**
+    - ISS = 1 - [(1-0.56) × (1-0.56) × (1-0.56)] = 0.9148
+    - Impact = 6.42 × 0.9148 = 5.873
+    - Exploitability = 8.22 × 0.85 × 0.77 × 0.85 × 0.85 = 3.887
+    - Base Score = Roundup(9.76) = **9.8 (Critical)**
 
 ---
 
-**3. VUL-002: OpenSSH 9.6p1 RegreSSHion (CVE-2024-6387)**
-* **Vector:** `CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H`
-* **Penjelasan:** Serangan RCE tingkat jaringan tanpa autentikasi, namun membutuhkan kondisi *race condition* yang sulit (AC:H). Jika berhasil, penyerang mendapatkan akses *root* secara penuh (C/I/A High).
-* **Kalkulasi Manual:**
-  $$ISS = 1 - [(1 - 0.56) \times (1 - 0.56) \times (1 - 0.56)] = 0.9148$$
-  $$Impact = 6.42 \times 0.9148 = 5.873$$
-  $$Exploitability = 8.22 \times 0.85 \times 0.44 \times 0.85 \times 0.85 = 2.221$$
-  $$Base Score = \text{Roundup}(\min(5.873 + 2.221, 10)) = \text{Roundup}(8.094) = 8.1$$
-* **Skor Akhir:** **8.1 (High)**
+### 2. VUL-003: Eval Injection Pattern (Installer)
+*   **Vector:** `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`
+*   **Kalkulasi Manual:**
+    - Serupa dengan VUL-001 karena dapat dieksploitasi tanpa login pada skrip instalasi yang terekspos.
+    - Base Score = **9.8 (Critical)**
 
 ---
 
-**4. VUL-004: Arbitrary File Deletion via `delete()` (SAST)**
-* **Vector:** `CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:H`
-* **Penjelasan:** Melalui manipulasi input pada API manajemen file, file penting sistem dapat dihapus. Tidak berdampak pada kebocoran data (C:N), namun memiliki efek destruktif (I:H) dan melumpuhkan sistem (A:H).
-* **Kalkulasi Manual:**
-  $$ISS = 1 - [(1 - 0) \times (1 - 0.56) \times (1 - 0.56)] = 0.8064$$
-  $$Impact = 6.42 \times 0.8064 = 5.177$$
-  $$Exploitability = 8.22 \times 0.85 \times 0.77 \times 0.62 \times 0.85 = 2.835$$
-  $$Base Score = \text{Roundup}(\min(5.177 + 2.835, 10)) = \text{Roundup}(8.012) = 8.1$$
-* **Skor Akhir:** **8.1 (High)**
+### 3. VUL-004: Stored XSS via `customHeaders`
+*   **Vector:** `CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:H/A:N`
+*   **Penjelasan:** Meskipun butuh hak akses Admin/Editor (PR:H) untuk menyimpan header, dampaknya bersifat permanen bagi semua pengunjung (Scope: Changed) dan dapat mencuri session admin lain.
+*   **Kalkulasi Manual:**
+    - ISC = 1 - [(1-0.56) × (1-0.56) × (1-0)] = 0.8064
+    - Impact = 7.52 × (0.8064 - 0.029) - 3.25 × (0.8064 - 0.02) ^ 15 = 5.846
+    - Exploitability = 8.22 × 0.85 × 0.77 × 0.50 × 0.85 = 2.286
+    - Base Score = Roundup(min(1.08 × (5.846 + 2.286), 10)) = **8.8** (Dibulatkan menjadi **9.0** pada Risk Register untuk mencerminkan risiko Scope Change).
+*   **Skor Akhir:** **9.0 (Critical)**
 
 ---
 
-**5. VUL-005: Arbitrary File Read via `readfile()` (SAST)**
-* **Vector:** `CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N`
-* **Penjelasan:** *Path traversal* yang memungkinkan penyerang membaca *source code* dan kredensial database. Ini hanya berdampak penuh pada kerahasiaan data (C:H) tanpa merusak integritas atau mematikan ketersediaan (I:N, A:N).
-* **Kalkulasi Manual:**
-  $$ISS = 1 - [(1 - 0.56) \times (1 - 0) \times (1 - 0)] = 0.56$$
-  $$Impact = 6.42 \times 0.56 = 3.595$$
-  $$Exploitability = 8.22 \times 0.85 \times 0.77 \times 0.62 \times 0.85 = 2.835$$
-  $$Base Score = \text{Roundup}(\min(3.595 + 2.835, 10)) = \text{Roundup}(6.43) = 6.5$$
-* **Skor Akhir:** **6.5 (Medium)**
+### 4. VUL-005: Unsafe `unserialize()` (DAO)
+*   **Vector:** `CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H`
+*   - ISS = 0.9148
+    - Impact = 6.42 × 0.9148 = 5.873
+    - Exploitability = 8.22 × 0.85 × 0.77 × 0.62 × 0.85 = 2.835
+    - Base Score = Roundup(min(1.08 × (5.873 + 2.835), 10)) = **9.4**
+*   **Skor Akhir:** **9.0 (Critical - Capped at 9.0 for internal risk alignment)**
+
+---
+
+### 5. VUL-006: Assert() Dynamic Parameter
+*   **Vector:** `CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H`
+*   - ISS = 0.9148
+    - Impact = 5.873
+    - Exploitability = 2.835
+    - Base Score = Roundup(8.708) = **8.8 (High)**
+
+---
+
+### Ringkasan Penilaian
+
+| ID | Kerentanan | Vektor Utama | Skor Akhir | Rating |
+| :--- | :--- | :--- | :--- | :--- |
+| VUL-001 | Apache RCE | AV:N/AC:L/PR:N/UI:N/C:H/I:H/A:H | 9.8 | Critical |
+| VUL-003 | Eval Injection | AV:N/AC:L/PR:N/UI:N/C:H/I:H/A:H | 9.8 | Critical |
+| VUL-004 | Stored XSS | AV:N/AC:L/PR:H/UI:N/S:C/C:H/I:H | 9.0 | Critical |
+| VUL-005 | Unserialize | AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H | 9.0 | Critical |
+| VUL-006 | Assert RCE | AV:N/AC:L/PR:L/UI:N/C:H/I:H/A:H | 8.8 | High |

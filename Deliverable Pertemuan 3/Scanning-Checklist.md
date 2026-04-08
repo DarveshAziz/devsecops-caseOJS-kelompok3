@@ -16,5 +16,5 @@ Checklist ini digunakan untuk memastikan kelengkapan scanning:
 - [x] Semgrep dengan ruleset `p/php` selesai dijalankan
 - [x] Semgrep dengan ruleset `p/owasp-top-ten` selesai dijalankan
 - [x] Custom rules Semgrep dijalankan
-- [ ] Manual review pada 5 file kritis
-- [ ] Temuan deduplikasi (hapus false positive)
+- [x] Manual review pada 5 file kritis
+- [x] Temuan deduplikasi (hapus false positive)

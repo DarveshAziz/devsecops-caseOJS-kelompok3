@@ -2,18 +2,18 @@
 
 ## Ringkasan Eksekutif
 
-Dokumen ini merangkum hasil **Dynamic Application Security Testing (DAST)** dan **Static Application Security Testing (SAST)** pada Open Journal Systems (OJS) versi 3.3.0-8. Scanning dilakukan dengan menggunakan beberapa tool keamanan industri-standar dan menghasilkan identifikasi **15 temuan kritis** yang terdiri dari vulnerabilities di layer runtime dan layer source code.
+Dokumen ini merangkum hasil **Dynamic Application Security Testing (DAST)**, **Static Application Security Testing (SAST)**, dan **manual code review** pada Open Journal Systems (OJS) versi 3.3.0-8. Seluruh hasil scanning terbaru dikonsolidasikan menjadi **20 temuan raw terpilih** yang mewakili isu paling relevan setelah deduplikasi antar-tool.
 
 **Scope Scanning:**
 
 - **Target Aplikasi:** Open Journal Systems (OJS)
 - **Target Host:** `http://10.34.100.180` (port 80)
-- **Tanggal Scanning:** 2 April 2026
 - **Tools DAST:** OWASP ZAP 2.16.1, Nikto v2.6.0, Nmap 7.98, SQLMap 1.10.2
-- **Tools SAST:** phpcs-security-audit
+- **Tools SAST:** phpcs-security-audit, Semgrep (`p/php`, `p/owasp-top-ten`, custom rules)
+- **Metode Tambahan:** Manual code review pada 5 file kritis
 
 **Kesimpulan Utama:**
-Aplikasi OJS menunjukkan kelemahan signifikan pada dua area utama: (1) **security misconfiguration** di layer runtime ditunjukkan oleh missing security headers, directory browsing yang aktif, dan weak session hardening; (2) **insecure file operations dan code injection hotspots** di layer source code yang memungkinkan path traversal, remote code execution, dan SQL injection.
+Aplikasi OJS menunjukkan kelemahan signifikan pada dua area utama: (1) **security misconfiguration dan komponen usang** di layer runtime, ditunjukkan oleh missing security headers, directory browsing, potensi CSRF, serta service version yang rentan; (2) **unsafe code pattern** di layer source code, ditunjukkan oleh eval/assert dinamis, operasi file tanpa kontrol ketat, include berbasis variabel, stored XSS, dan unserialize tanpa filter.
 
 ---
 
@@ -147,82 +147,134 @@ phpcs --standard=Security --extensions=php \
 
 ---
 
+### 3.2 Semgrep
+
+**Ruleset yang Dijalankan:**
+
+- `p/php`
+- `p/owasp-top-ten`
+- custom rules
+
+**Ringkasan Hasil:**
+
+| Ruleset | Raw Match | Temuan Utama |
+| ------- | --------- | ------------ |
+| `p/php` | 1 | `phpinfo()` exposure |
+| `p/owasp-top-ten` | 1 | `phpinfo()` exposure |
+| Custom rules | 107 | `include/require` berbasis variabel, `eval()` injection |
+
+**Interpretation:** Semgrep menambah bukti baru yang tidak muncul eksplisit pada tabel PHPCS, terutama pola `eval()` dinamis, `include/require` dengan variabel, dan paparan `phpinfo()`. Hasil Semgrep kemudian dideduplikasi agar tidak menghitung dua kali temuan `phpinfo()` dari dua ruleset berbeda.
+
+---
+
+### 3.3 Manual Code Review
+
+**Cakupan Review:**
+
+- DAO / database layer
+- Authorization policy
+- File upload manager
+- TinyMCE plugin
+- Template manager
+
+**Temuan Manual Paling Penting:**
+
+| Area | Temuan | Severity |
+| ---- | ------ | -------- |
+| Template manager | Stored XSS via `customHeaders` tanpa sanitasi | Critical |
+| DAO layer | `unserialize()` tanpa `allowed_classes` | Critical |
+| File manager | Upload file tanpa validasi MIME/ekstensi di fungsi inti | High |
+
+**Interpretation:** Manual review melengkapi SAST otomatis dengan menemukan isu yang lebih kontekstual, terutama pada jalur output HTML, pengolahan data persisten, dan desain upload core yang terlalu permisif.
+
+---
+
 ## 4. Tabel Temuan Raw — Temuan Kritis Terpilih
 
-Berikut adalah 6 temuan paling kritis yang telah dikurasi dari raw output scanning DAST dan SAST.
+Berikut adalah 20 temuan raw final yang telah dikonsolidasikan dari ZAP, Nikto, Nmap, SQLMap, PHPCS, Semgrep, dan manual review. Temuan yang sama pada beberapa tools hanya dihitung satu kali pada sumber bukti yang paling representatif.
 
-| # | Nama Kerentanan                             | Tool         | Severity           | Instances | Impact                                 |
-| - | ------------------------------------------- | ------------ | ------------------ | --------- | -------------------------------------- |
-| 1 | **CSP Header Not Set**                | DAST (ZAP)   | Medium             | 573       | XSS, Resource injection, Clickjacking  |
-| 2 | **Directory Browsing Enabled**        | DAST (Nikto) | Medium             | 88 dirs   | Information disclosure, reconnaissance |
-| 3 | **Assert() dengan Dynamic Parameter** | SAST (phpcs) | **Critical** | 617       | Remote Code Execution (RCE)            |
-| 4 | **Vulnerable jQuery UI v1.12.1**      | DAST (ZAP)   | Medium             | 1         | XSS, DoS via known CVEs                |
-| 5 | **Cookie tanpa HttpOnly/SameSite**    | DAST (ZAP)   | Low                | 2         | Session hijacking, CSRF                |
-| 6 | **basename() / readfile() Dynamic**   | SAST (phpcs) | High               | 29        | Path traversal, arbitrary file read    |
+| # | Nama Kerentanan | Tool / Metode | Severity | Bukti Ringkas |
+| - | --------------- | ------------- | -------- | ------------- |
+| 1 | CSP Header Not Set | DAST (ZAP) | Medium | 573 respons tanpa CSP |
+| 2 | Directory Browsing Enabled | DAST (ZAP) | Medium | 88 direktori terbuka |
+| 3 | Missing Anti-clickjacking Header | DAST (ZAP) | Medium | 122 respons tanpa proteksi iframe |
+| 4 | Vulnerable jQuery UI v1.12.1 | DAST (ZAP) | Medium | 1 library usang terdeteksi |
+| 5 | Application Error Disclosure | DAST (ZAP) | Medium | Error page terekspos pada compiled templates |
+| 6 | Missing HSTS Header | DAST (Nikto) | Medium | Header `strict-transport-security` tidak ada |
+| 7 | Missing X-Content-Type-Options | DAST (Nikto) | Medium | Header `x-content-type-options` tidak ada |
+| 8 | Missing Referrer-Policy | DAST (Nikto) | Low | Header `referrer-policy` tidak ada |
+| 9 | OpenSSH 9.6p1 Multiple CVEs | DAST (Nmap) | High | `CVE-2024-6387` dan CVE lain terpetakan |
+| 10 | Apache 2.4.58 Multiple CVEs | DAST (Nmap) | High | `CVE-2024-38476`, `CVE-2024-38474`, dst |
+| 11 | Possible CSRF on Search Form | DAST (Nmap) | Medium | Script `http-csrf` menandai form `query` |
+| 12 | Assert Dynamic Parameter | SAST (PHPCS) | Critical | `assert()` dinamis pada banyak file |
+| 13 | Dynamic File Deletion Primitive | SAST (PHPCS) | Critical | `delete()` dinamis di API file |
+| 14 | Dynamic File Read via `readfile()` | SAST (PHPCS) | High | `readfile()` dinamis di `PageHandler` |
+| 15 | Variable-based Include/Require | SAST (Semgrep) | High | 104 instance `include/require` dinamis |
+| 16 | Eval Injection Pattern | SAST (Semgrep) | Critical | 3 instance `eval()` dinamis |
+| 17 | phpinfo Exposure | SAST (Semgrep) | Medium | `phpinfo()` terdeteksi di `AdminHandler` |
+| 18 | Stored XSS via `customHeaders` | Manual Review | Critical | Output HTML tanpa sanitasi |
+| 19 | File Upload Without Validation | Manual Review | High | Upload core tanpa whitelist MIME/ekstensi |
+| 20 | Unsafe `unserialize()` on Persisted Data | Manual Review | Critical | `unserialize()` tanpa `allowed_classes` |
 
-### Temuan #1: CSP Header Not Set (XSS Prevention Bypass)
+Enam temuan berikut dibahas lebih rinci sebagai sorotan yang mewakili risiko utama dari seluruh proses scanning.
 
-**Content Security Policy (CSP)** adalah HTTP response header yang mengontrol sumber resource (scripts, stylesheets, images) yang dapat dimuat browser. Tanpa CSP, browser tidak punya batasan, sehingga attacker dapat inject atau menjalankan script arbitrary. OJS mengirim 573 responses tanpa CSP header.
+### Temuan #1: CSP Header Not Set
 
-**Impact:** Stored XSS dari database dapat di-render dan dijalankan, JavaScript injection dari third-party sources dapat dilakukan, dan malicious scripts dalam user-submitted content tidak terblokir.
+**Content Security Policy (CSP)** adalah HTTP response header yang membatasi sumber resource yang boleh dimuat browser. ZAP menunjukkan 573 respons tanpa CSP, sehingga dampak XSS dan resource injection menjadi lebih besar.
 
-**Remediation:** Tambahkan `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;` pada Apache atau application level.
+**Impact:** Script tidak terpercaya lebih mudah dieksekusi ketika ada celah injeksi di sisi aplikasi atau konten.
 
----
-
-### Temuan #2: Directory Indexing Enabled (Information Disclosure)
-
-**Directory Indexing** aktif pada 88 direktori (`/cache/`, `/lib/`, `/plugins/`, `/templates/`, `/docs/`, dll), memungkinkan attacker browse file listing tanpa restriction. Attacker dapat melihat struktur codebase, mengidentifikasi plugin versions, menemukan backup files, dan melakukan better reconnaissance.
-
-**Impact:** Reconnaissance lebih mudah, backup files dengan credentials bisa ditemukan, plugin versions terungkap memudahkan exploitation known CVEs.
-
-**Remediation:** Disable directory indexing dengan `Options -Indexes` di Apache atau `.htaccess`.
-
----
-
-### Temuan #3: assert() dengan Parameter Dynamic (Remote Code Execution)
-
-**Kritikalitas:** CRITICAL
-
-**PHPCS mendeteksi 617 instances** penggunaan `assert()` dengan parameter yang berasal dari input user atau variabel dynamic. Fungsi `assert()` mengevaluasi PHP code dalam stringnya, sehingga jika parameter dari attacker, dapat trigger arbitrary code execution.
-
-**Exploitation Example:**
-
-```php
-assert($_GET['condition']); // bila diakses: ?condition=system('whoami')
-```
-
-**Impact:** Full server compromise, database access, data exfiltration, malware installation.
-
-**Remediation:** (1) Disable `assert()` di production (`php.ini: assert.active=0`), (2) Replace dengan proper validation logic, (3) Gunakan exception handling bukan assertion untuk security-critical decisions.
+**Remediation:** Tambahkan kebijakan CSP yang ketat pada level web server atau aplikasi.
 
 ---
 
-### Temuan #4: Vulnerable JavaScript Library (jQuery UI v1.12.1)
+### Temuan #2: Directory Browsing Enabled
 
-**OWASP ZAP mendeteksi** jQuery UI v1.12.1 (June 2018) yang sudah deprecated dan memiliki multiple known CVEs: CVE-2021-41183 (XSS), CVE-2021-41182 (Prototype pollution), CVE-2022-31160 (DOM Clobbering).
+**Directory indexing** masih aktif pada puluhan direktori seperti `/cache/`, `/lib/`, dan `/templates/`. Kondisi ini memudahkan attacker melakukan reconnaissance terhadap struktur aplikasi.
 
-**Impact:** Jika jQuery UI method dipanggil dengan user input, dapat trigger XSS atau DoS. CVEs sudah public dan exploit tersedia.
+**Impact:** Penyerang lebih mudah menemukan file, plugin, dan area sensitif yang bisa dipakai untuk pivot serangan.
 
-**Remediation:** Update ke jQuery UI 1.13.3 atau lebih baru yang telah mempatch semua known vulnerabilities.
-
----
-
-### Temuan #5: Cookie Session tanpa HttpOnly & SameSite Flags
-
-**OJSSID session cookie** tidak memiliki `HttpOnly` dan `SameSite` attributes. Ini memungkinkan: (1) JavaScript dapat akses cookie via `document.cookie`, sehingga XSS dapat mencuri session, (2) Cookie dikirim dalam cross-site requests, memungkinkan CSRF attacks.
-
-**Remediation:** Set `HttpOnly`, `Secure`, dan `SameSite=Strict` pada cookie parameters di PHP.
+**Remediation:** Nonaktifkan listing direktori dengan `Options -Indexes` dan pastikan direktori non-public tidak dapat diakses langsung.
 
 ---
 
-### Temuan #6: basename() / readfile() dengan Parameter Dynamic (Path Traversal)
+### Temuan #3: Assert() dengan Parameter Dynamic
 
-**PHPCS mengdeteksi 29 instances** penggunaan `basename()` dan `readfile()` dengan parameter dynamic. Meski `basename()` menghilangkan path prefix, attacker masih bisa jika kombinasi dengan directory traversal semantics. `readfile()` langsung arbitrary file read jika path tidak validated.
+**PHPCS** mendeteksi banyak penggunaan `assert()` dengan parameter dinamis. Walaupun tidak semua otomatis exploitable, pola ini tetap berbahaya karena `assert()` dapat berperan sebagai sink eksekusi kode.
 
-**Impact:** Path traversal memungkinkan akses ke `config.inc.php` (database credentials), private keys, logs, atau source code sensitif.
+**Impact:** Jika aliran datanya bisa dipengaruhi attacker, risiko paling buruk adalah remote code execution.
 
-**Remediation:** Gunakan whitelist approach untuk allowed filenames, validate dengan `realpath()`, dan ensure path tidak escape designated directory.
+**Remediation:** Hapus penggunaan `assert()` pada jalur produksi dan ganti dengan validation atau exception handling yang eksplisit.
+
+---
+
+### Temuan #4: Apache 2.4.58 Multiple CVEs
+
+**Nmap** memetakan service HTTP ke Apache 2.4.58 dan mengaitkannya dengan beberapa CVE berdampak tinggi. Ini memperlihatkan bahwa hardening aplikasi perlu dibarengi patching host dan middleware.
+
+**Impact:** Attack surface tidak hanya berada di kode aplikasi, tetapi juga di web server yang melayani aplikasi.
+
+**Remediation:** Upgrade Apache ke versi yang sudah menerima patch keamanan terbaru.
+
+---
+
+### Temuan #5: Eval Injection Pattern
+
+**Semgrep custom rules** menemukan penggunaan `eval()` dinamis pada `Installer.inc.php`. Ini adalah pola klasik code injection yang tidak seharusnya muncul pada codebase produksi.
+
+**Impact:** Nilai yang dapat dimanipulasi attacker berpotensi berubah menjadi kode PHP yang dieksekusi.
+
+**Remediation:** Hindari `eval()` sepenuhnya; gunakan parser, mapping, atau dispatch yang eksplisit.
+
+---
+
+### Temuan #6: Stored XSS via `customHeaders`
+
+**Manual review** menunjukkan bahwa `customHeaders` diteruskan ke output HTML tanpa sanitasi. Berbeda dengan SAST generik, temuan ini muncul dari pemahaman konteks template dan jalur render OJS.
+
+**Impact:** Payload berbahaya dapat tersimpan dan dieksekusi ketika halaman dimuat oleh pengguna lain.
+
+**Remediation:** Sanitasi `customHeaders` sebelum dirender dan terapkan escaping yang sesuai konteks output.
 
 ---
 
@@ -288,32 +340,33 @@ Jika SSRF berhasil, attacker dapat mengakses:
 
 ### Ringkasan Temuan
 
-Dari scanning DAST dan SAST terhadap OJS, teridentifikasi **15 temuan kritis** dengan distribusi:
+Dari scanning DAST, SAST, dan manual review terhadap OJS, dikonsolidasikan **20 temuan raw terpilih** dengan distribusi:
 
-- **Critical:** 2 (assert() vulnerability, delete() vulnerability)
-- **High:** 3 (basename(), readfile(), file operations)
-- **Medium:** 6 (CSP, directory browsing, clickjacking, jQuery UI, error disclosure, callbacks)
-- **Low:** 4 (server header leakage, cookie issues)
+- **Critical:** 5 (`assert()` dinamis, `delete()` dinamis, `eval()` dinamis, stored XSS, `unserialize()` tanpa filter)
+- **High:** 5 (OpenSSH usang, Apache usang, `readfile()` dinamis, variable include/require, upload tanpa validasi)
+- **Medium:** 9 (CSP, directory browsing, clickjacking, jQuery UI usang, error disclosure, HSTS/X-Content-Type-Options hilang, CSRF indikatif, `phpinfo()`)
+- **Low:** 1 (`Referrer-Policy` belum diterapkan)
 
 ### Prioritas Perbaikan
 
 1. **Immediate (Week 1):**
 
-   - Disable `assert()` di production environment
-   - Add security headers (CSP, X-Frame-Options, X-Content-Type-Options)
+   - Patch Apache dan OpenSSH ke versi yang aman
+   - Disable `assert()` dan hilangkan pola `eval()` pada codebase
+   - Add security headers (CSP, HSTS, X-Frame-Options atau `frame-ancestors`, X-Content-Type-Options)
    - Disable directory indexing di Apache
-   - Set HttpOnly, Secure, SameSite flags pada session cookies
+   - Sanitasi output `customHeaders` dan audit area render HTML lain
 2. **Short-term (Week 2-4):**
 
    - Update jQuery UI v1.12.1 ke v1.13.3+
-   - Update Apache 2.4.58 ke 2.4.66
-   - Audit dan remediate file operation vulnerabilities (basename, readfile, delete)
+   - Audit dan remediate file operation vulnerabilities (`readfile()`, `delete()`, include/require dinamis)
+   - Tambahkan whitelist MIME/ekstensi pada alur upload inti
    - Custom error pages (hide stack traces)
 3. **Medium-term (Month 2-3):**
 
    - Implement comprehensive input validation/sanitization
    - Review dan harden authorization logic
-   - Implement proper SSRF protections
+   - Review proteksi CSRF pada form publik dan area autentikasi
    - Set up regular SAST/DAST scanning dalam CI/CD
 
 ---
@@ -331,6 +384,5 @@ Dari scanning DAST dan SAST terhadap OJS, teridentifikasi **15 temuan kritis** d
 ---
 
 **Dokumen ini disiapkan sebagai hasil scanning keamanan formal untuk Pertemuan 3 DevSecOps Course.**
-**Tanggal Pembuatan:** 2 April 2026
 **Dibuat Oleh:** DevSecOps Team
 **Status:** FINAL

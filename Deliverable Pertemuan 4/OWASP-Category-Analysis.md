@@ -1,88 +1,78 @@
-// delete later (Revisi klo salah yak :v)
-// Narasi analisis per kategori OWASP yang relevan
+# Analisis Mendalam Per Kategori OWASP (2021) — OJS 3.3.0-8
 
-### A01 — Broken Access Control
+Dokumen ini menyajikan narasi analisis teknis dan bisnis untuk setiap kategori OWASP Top 10 yang relevan berdasarkan 20 temuan keamanan pada sistem OJS.
 
-**Temuan 1 — Arbitrary File Deletion via `delete()`:**
-Fungsi manajemen file sistem terekspos ke parameter dinamis tanpa melalui proses validasi sanitasi direktori yang aman, memungkinkan Path Traversal.
+---
 
-**Bukti:**
-```text
-Sumber: Hasil SAST (phpcs-security-audit)
-Lokasi: /lib/pkp/controllers/api/file/PKPManageFileApiHandler.inc.php (Line 59)
-Peringatan: WARNING: Filesystem function delete() detected with dynamic parameter
+## 1. A01:2021 — Broken Access Control
 
-Skenario Eksploitasi:
-Input manipulasi path: delete("../../config.inc.php")
-Dampak: Penghapusan file kritis sistem atau konfigurasi aplikasi.
-```
+**Kondisi pada OJS:**
+Ditemukan penggunaan parameter dinamis pada fungsi sistem file inti seperti `delete()` dan `readfile()` (VUL-007, VUL-008). Selain itu, terdapat indikasi CSRF pada form pencarian (VUL-019).
 
-**Temuan 2 — Arbitrary File Read via `readfile()`:**
-Penggunaan `readfile()` dengan input dinamis memungkinkan penyerang membaca berkas di luar root direktori web.
-**Bukti:**
-```text
-Sumber: Hasil SAST (phpcs-security-audit)
-Lokasi: /lib/pkp/controllers/page/PageHandler.inc.php (Line 155)
-Skenario Eksploitasi: GET parameter dengan nilai ../../../.env atau ../../config.inc.php
-```
+**Narasi Analisis:**
+Kategori ini sangat kritis karena OJS mengelola dokumen riset yang bersifat privat (sebelum publikasi). Dengan adanya *primitive* penghapusan atau pembacaan file secara dinamis, penyerang yang memiliki akses minimal (seperti akun Author) berpotensi melampaui batasan aksesnya untuk membaca file konfigurasi `config.inc.php` yang berisi kredensial database plain-text. Kegagalan kontrol akses di sini berarti runtuhnya sekat privasi antar pengguna dan integritas data jurnal.
 
-### A03 — Injection
-**Temuan 1 — Eksekusi Kode (RCE) via `assert():`**
-Injeksi pada lapisan eksekusi interpreter PHP karena penyertaan parameter tanpa penyaringan (unsanitized input) ke dalam fungsi eval-like.
+**Mitigasi:**
+- Terapkan prinsip *Least Privilege* pada level aplikasi.
+- Gunakan *Indirect Object References* (seperti ID file di database) alih-alih path file langsung dari input pengguna.
 
-**Bukti:**
-```text
-Sumber: Hasil SAST (phpcs-security-audit)
-Lokasi: /lib/pkp/pages/submission/PKPSubmissionHandler.inc.php (Line 60)
-Peringatan: WARNING: Assert eval function assert() detected with dynamic parameter
-```
+---
 
-**Temuan 2 — Stored XSS Candidate pada Section Names:**
-Aplikasi menyimpan payload HTML/JS jahat yang diinputkan pada nama section dan me-render-nya ke dalam data bootstrap frontend yang terautentikasi.
+## 2. A03:2021 — Injection
 
-**Bukti:**
-```text
-Payload: <svg/onload=alert('XSS_SUCCESS')>
-Lokasi: [http://10.34.100.180/index.php/halo/submissions](http://10.34.100.180/index.php/halo/submissions) (Bootstrap JSON Data)
-Target Render: {"param":"sectionIds","value":4,"title":"<svg/onload=alert('XSS_SUCCESS')>"}
-```
+**Kondisi pada OJS:**
+Merupakan kategori dengan temuan paling berbahaya, mencakup `eval()` injection (VUL-003), Stored XSS (VUL-004), dan `assert()` dynamic parameter (VUL-006).
 
+**Narasi Analisis:**
+Injeksi pada OJS bermanifestasi dalam dua bentuk: *Code Injection* dan *Script Injection*. Penggunaan `eval()` pada skrip installer adalah "bom waktu" yang memungkinkan penyerang mengeksekusi perintah sistem operasi. Sementara itu, Stored XSS pada `customHeaders` memungkinkan serangan *sidestepping* terhadap admin; penyerang tidak perlu menyerang server secara langsung, cukup dengan menitipkan payload yang akan mencuri sesi admin saat mereka login.
 
-### A05 — Security Misconfiguration
-**Temuan 1 — Directory Browsing / Indexing Terbuka:**
-Konfigurasi Apache gagal menutup akses pembacaan indeks direktori, mengakibatkan bocornya file internal dan cache
+**Mitigasi:**
+- Larang penggunaan fungsi eksekusi kode dinamis (`eval`, `assert`, `preg_replace` dengan `/e`).
+- Implementasikan *Context-Aware Output Escaping* untuk semua data yang dirender ke browser.
 
-**Bukti:**
-```text
-GET /cache/ HTTP/1.1
-Host: 10.34.100.180
+---
 
-Response: HTTP/1.1 200 OK
-(Menampilkan halaman "Index of /cache" berisi folder t_compile, HTML, URI, dll)
-```
+## 3. A05:2021 — Security Misconfiguration
 
-**Temuan 2 — Missing Security Headers**
-Aplikasi berjalan di web tanpa mendeklarasikan header pertahanan seperti Content Security Policy (CSP), HSTS, dan X-Frame-Options.
+**Kondisi pada OJS:**
+Ditemukan directory browsing pada 88 direktori (VUL-012), ketiadaan CSP (VUL-013), dan paparan informasi melalui `phpinfo()` serta error disclosure (VUL-015, VUL-018).
 
-**Bukti:**
-```text
-Sumber: Pemindaian Nikto & ZAP
-Target: [http://10.34.100.180](http://10.34.100.180) (Semua Endpoint)
-Hasil: 
-- Suggested security header missing: strict-transport-security
-- Suggested security header missing: content-security-policy
-- Suggested security header missing: x-frame-options
-```
+**Narasi Analisis:**
+Miskonfigurasi sering dianggap sebagai celah "Low", namun pada OJS, directory browsing pada folder `/cache/` atau `/plugins/` memberikan peta jalan (*roadmap*) bagi penyerang untuk mengidentifikasi versi plugin yang rentan atau mengunduh file sementara yang mungkin berisi data sensitif. Ketiadaan header keamanan seperti CSP juga membuat mitigasi terhadap XSS (A03) menjadi tidak ada sama sekali.
 
-### A06 — Vulnerable & Outdated Components
-**Temuan — Web Server & SSH Usang (Multiple RCE):**
-Infrastruktur (web server Apache dan modul SSH) tidak menggunakan pembaruan keamanan terbaru, meninggalkannya rentan terhadap CVE tingkat kritikal.
+**Mitigasi:**
+- Nonaktifkan `Options Indexes` pada konfigurasi Apache/.htaccess.
+- Implementasikan security headers (CSP, HSTS, X-Frame-Options) secara konsisten di seluruh aplikasi.
 
-**Bukti:**
-```text
-Sumber: Pemindaian Nmap 7.98
-Target: 10.34.100.180
-Hasil Deteksi Port:
-- Port 80: Apache/2.4.58 (Ubuntu) -> Rentan CVE-2024-38476 (CVSS 9.8), CVE-2024-38474 (9.8)
-- Port 22: OpenSSH 9.6p1 Ubuntu -> Rentan CVE-2024-6387 "RegreSSHion" (CVSS 8.1)
-```
+---
+
+## 4. A06:2021 — Vulnerable and Outdated Components
+
+**Kondisi pada OJS:**
+Penggunaan Apache 2.4.58 (VUL-001) dan OpenSSH 9.6p1 (VUL-002) yang memiliki CVE kritis, serta library jQuery UI usang (VUL-011).
+
+**Narasi Analisis:**
+OJS sangat bergantung pada ekosistem middleware-nya. Meskipun kode aplikasi OJS diperbaiki, jika web server (Apache) memiliki celah RCE seperti CVE-2024-38476, maka seluruh perlindungan di level aplikasi menjadi tidak relevan. Institusi pendidikan seringkali lambat dalam melakukan *patching* middleware karena kekhawatiran akan *downtime*, namun temuan ini menunjukkan bahwa menunda update komponen adalah risiko keamanan tertinggi saat ini.
+
+**Mitigasi:**
+- Lakukan pemindaian dependensi secara rutin.
+- Gunakan kontainerisasi (Docker) untuk mempermudah proses update dan *rollback* versi middleware.
+
+---
+
+## 5. A08:2021 — Software and Data Integrity Failures
+
+**Kondisi pada OJS:**
+Ditemukan penggunaan `unserialize()` tanpa filter class yang aman pada layer DAO (VUL-005).
+
+**Narasi Analisis:**
+Kategori ini berkaitan dengan asumsi bahwa data yang tersimpan di database selalu aman. OJS melakukan deseralisasi data persisten yang, jika berhasil dimanipulasi melalui akses database atau celah injeksi lain, dapat memicu eksekusi objek PHP yang berbahaya. Ini adalah ancaman "Silent Killer" karena tidak terlihat pada interaksi user biasa namun dapat melumpuhkan sistem dari dalam.
+
+**Mitigasi:**
+- Ganti `unserialize()` dengan `json_decode()` jika memungkinkan.
+- Jika harus menggunakan `unserialize()`, gunakan opsi `allowed_classes => false` atau whitelist kelas tertentu yang ketat.
+
+---
+
+**Analisis ini disusun untuk memberikan konteks naratif terhadap temuan teknis Deliverable Pertemuan 4.**
+**Status:** FINAL
